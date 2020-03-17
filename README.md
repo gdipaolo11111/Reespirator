@@ -1,2 +1,2 @@
 # Reespirator
-Firmware para el dispositivo Reespirator del grupo Reesistencia Team
+Repositorio para el dispositivo Reespirator del grupo Reesistencia Team
