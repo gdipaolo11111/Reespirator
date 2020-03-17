@@ -1,0 +1,109 @@
+#include <AccelStepper.h>
+
+
+const int pasosPorRevolucion =3200; //Suponiendo un motor de 200 pasos/rev con un microsteper de 16
+const int velocidadUno=1200;
+const int velocidadDos=2400;
+
+
+
+//mis pines son diferentes por ahora!!
+const int pinEnable=5;
+AccelStepper stepper(1, 7, 6); //direction Digital 6 (CW), pulses Digital 7 (CLK)
+
+const int pinZumbador =4; 
+const int pinFinalCarrera=14;
+/// 
+
+boolean modo = true, errorFC=true;
+
+void setup()
+{
+  disableMotor();
+  Serial.begin(9600);  // Debugging only
+  pinMode(pinZumbador, OUTPUT);
+  pinMode(pinFinalCarrera, INPUT_PULLUP);
+  pinMode(pinEnable,OUTPUT); //test zumbador
+  digitalWrite(pinZumbador, HIGH);
+  delay(100);
+  digitalWrite(pinZumbador, LOW);
+  
+ 
+  Serial.println("Setup");
+
+
+  stepper.setAcceleration(10000);
+ 
+
+  enableMotor();
+}
+
+void loop()
+  {
+  stepper.run();
+  
+  
+  
+  if(!stepper.isRunning() && !errorFC)//si ha teminado media vuelta
+    {
+      if (modo)                         //velociad 1
+        {
+        Serial.println("Modo 1");
+        stepper.setMaxSpeed(velocidadUno);
+        stepper.move(pasosPorRevolucion/2);
+        }
+      else                                //velociadad 2
+        {
+        Serial.println("Modo 2, verificar el final de carrera");
+        
+        if (digitalRead(pinFinalCarrera) )//no se ha llegado al final
+          {
+            errorFC=true;
+            stepper.move(100);
+            digitalWrite(pinZumbador, true);
+          }
+       
+       else 
+          {          
+          stepper.setMaxSpeed(velocidadDos);
+          stepper.move(pasosPorRevolucion/2);  
+          }      
+        }
+      modo = !modo;
+      
+    }
+
+     else if (!stepper.isRunning() && errorFC) //si hay un error pero ha echo los 100 pasos extra en busca del Final de Carrera
+      {
+        if (digitalRead(pinFinalCarrera)) //no se ha llegado al final
+          {
+            errorFC=true;
+            stepper.move(50);
+            digitalWrite(pinZumbador, true);
+          }
+         else 
+          {
+            errorFC =false;
+            digitalWrite(pinZumbador, false);
+            stepper.setMaxSpeed(velocidadDos);
+            stepper.move(pasosPorRevolucion/2);
+          }
+      }
+    
+    
+
+
+    
+  }
+
+
+
+void enableMotor ()
+{
+  digitalWrite(pinEnable, HIGH);
+}
+
+void disableMotor ()
+{
+  digitalWrite(pinEnable, LOW);
+}
